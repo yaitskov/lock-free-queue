@@ -1,6 +1,7 @@
 package com.github.lock.free.queue;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,12 +14,13 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Daneel Yaitskov
  */
+@Ignore
 public class LockFreeQueueTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LockFreeQueueTest.class);
 
-    public static final int THREADS = 123;
-    public static final int MESSAGES = 8;
+    public static final int THREADS = 129;
+    public static final int MESSAGES = 39;
     public static final int SPACE = 100;
 
     class Worker extends Thread {
@@ -60,7 +62,7 @@ public class LockFreeQueueTest {
             super.run();
             for (int j = 0; j < MESSAGES; ++j) {
                 queue.add(j + i * SPACE);
-                logger.info("put {}", (j + i * SPACE));
+//                logger.info("put {}", (j + i * SPACE));
             }
         }
     }
@@ -87,7 +89,7 @@ public class LockFreeQueueTest {
                     Thread.yield();
                 } else {
                     collector.add(n);
-                    logger.info("get {}", n);
+//                    logger.info("get {}", n);
                 }
             }
             for (Integer n : collector) {

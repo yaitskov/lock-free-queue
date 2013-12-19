@@ -21,7 +21,7 @@ public class LockFreeQueue<T> {
     private final AtomicReference<Node<T>> tail = new AtomicReference<Node<T>>(stub);
 
     public void add(T x) {
-        logger.info("put {}", x);
+//        logger.info("put {}", x);
         addNode(new Node<T>(x));
         length.incrementAndGet();
     }
@@ -30,30 +30,35 @@ public class LockFreeQueue<T> {
         while (true) {
             long l = length.get();
             if (l == 1) {
-                logger.info("null cause length is 1");
+//                logger.info("null cause length is 1");
                 return null;
+            } else if (l < 1) {
+                throw new IllegalStateException("bad length " + l);
             }
             if (length.compareAndSet(l, l - 1)) {
-                logger.info("changed length is {}", l);
+//                logger.info("changed length is {}", l);
                 break;
             } else {
-                logger.info("failed change length");
+//                logger.info("failed change length");
             }
         }
         while (true) {
             Node<T> r = head.get();
-            logger.info("head {}, next", r);
+//            logger.info("head {}, next", r);
+            if (r == null) {
+                throw new IllegalStateException("null head");
+            }
             if (head.compareAndSet(r, r.next.get())) {
                 if (r == stub) {
-                    logger.info("took stub retry");
+//                    logger.info("took stub retry");
                     stub.next.set(null);
                     addNode(stub);
                 } else {
-                    logger.info("took {}", r.ref);
+//                    logger.info("took {}", r.ref);
                     return r.ref;
                 }
             } else {
-                logger.info("failed take head");
+//                logger.info("failed take head");
             }
         }
     }
@@ -63,10 +68,10 @@ public class LockFreeQueue<T> {
         while (true) {
             t = tail.get();
             if (tail.compareAndSet(t, n)) {
-                logger.info("put");
+//                logger.info("put");
                 break;
             } else {
-                logger.info("failed put");
+//                logger.info("failed put");
             }
         }
         if (t.next.compareAndSet(null, n)) {
