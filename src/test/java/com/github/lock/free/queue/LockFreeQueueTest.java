@@ -18,14 +18,14 @@ public class LockFreeQueueTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LockFreeQueueTest.class);
 
-    public static final int THREADS = 329;
-    public static final int MESSAGES = 9999;
-    public static final int SPACE = 10000;
+    public static final int THREADS = 41;
+    public static final long MESSAGES = 99999L;
+    public static final long SPACE    = MESSAGES + 1L;
     class Worker extends Thread {
-        final LockFreeQueue<Integer> queue;
+        final SimpleQueue<Long> queue;
         final CountDownLatch startLock;
 
-        Worker(LockFreeQueue<Integer> queue,
+        Worker(SimpleQueue<Long> queue,
                String name,
                CountDownLatch startLock)
         {
@@ -45,11 +45,11 @@ public class LockFreeQueueTest {
     }
 
     class Sender extends Worker {
-        final int i;
-        public Sender(LockFreeQueue<Integer> queue,
+        final long i;
+        public Sender(SimpleQueue<Long> queue,
                       String name,
                       CountDownLatch startLock,
-                      int i)
+                      long i)
         {
             super(queue, name, startLock);
             this.i = i;
@@ -58,7 +58,7 @@ public class LockFreeQueueTest {
         @Override
         public void run() {
             super.run();
-            for (int j = 0; j < MESSAGES; ++j) {
+            for (long j = 0; j < MESSAGES; ++j) {
                 queue.add(j + i * SPACE); // + ( i == 1 && j == 0 ? 1 : 0));
 //                logger.info("put {}", (j + i * SPACE));
             }
@@ -68,7 +68,7 @@ public class LockFreeQueueTest {
     class Receiver extends Worker {
         final CountDownLatch endLock;
         final AtomicLong checkSum;
-        public Receiver(LockFreeQueue<Integer> q, CountDownLatch endLock,
+        public Receiver(SimpleQueue<Long> q, CountDownLatch endLock,
                         String name,
                         CountDownLatch startLatch, AtomicLong checkSum)
         {
@@ -80,9 +80,9 @@ public class LockFreeQueueTest {
         @Override
         public void run() {
             super.run();
-            List<Integer> collector = new ArrayList<Integer>();
+            List<Long> collector = new ArrayList<Long>();
             while (collector.size() < MESSAGES) {
-                Integer n = queue.takeOrNull();
+                Long n = queue.takeOrNull();
                 if (n == null) {
                     Thread.yield();
                 } else {
@@ -90,7 +90,7 @@ public class LockFreeQueueTest {
 //                    logger.info("get {}", n);
                 }
             }
-            for (Integer n : collector) {
+            for (Long n : collector) {
                 checkSum.addAndGet(n);
             }
             endLock.countDown();
@@ -98,11 +98,22 @@ public class LockFreeQueueTest {
     }
 
     @Test
-    public void test() throws InterruptedException {
-        logger.info("init threads = {}; messages per thread = {}",
-                THREADS, MESSAGES);
-        LockFreeQueue<Integer> q = new LockFreeQueue<Integer>();
+    public void testLockFreeQueue() throws InterruptedException {
+        SimpleQueue<Long> q = new LockFreeQueue<Long>();
+        template(q);
+    }
 
+    @Test
+    public void testLinkedBlockingQueue() throws InterruptedException {
+        SimpleQueue<Long> q = new BlockingQueueAdapter<Long>();
+        template(q);
+    }
+
+    public void template(SimpleQueue<Long> q) throws InterruptedException {
+        logger.info("init; queue {}; threads = {}; messages per thread = {}",
+                q.getClass().getSimpleName(), THREADS, MESSAGES);
+
+        long started = System.currentTimeMillis();
         final AtomicLong checkSum = new AtomicLong();
         final CountDownLatch startLatch = new CountDownLatch(1);
         final CountDownLatch waitLatch = new CountDownLatch(THREADS);
@@ -123,6 +134,6 @@ public class LockFreeQueueTest {
             }
         }
         Assert.assertEquals(sum, checkSum.get());
-        logger.info("end");
+        logger.info("end {} sec", (System.currentTimeMillis() - started) / 1000.0);
     }
 }
