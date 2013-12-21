@@ -48,6 +48,10 @@ public class LockFreeQueue<T> {
             if (r == null) {
                 throw new IllegalStateException("null head");
             }
+            if (r.next.get() == null) {
+                length.incrementAndGet();
+                return null;
+            }
             if (head.compareAndSet(r, r.next.get())) {
                 if (r == stub) {
 //                    logger.info("took stub retry");

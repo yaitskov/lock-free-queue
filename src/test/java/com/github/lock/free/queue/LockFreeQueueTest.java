@@ -14,15 +14,13 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Daneel Yaitskov
  */
-@Ignore
 public class LockFreeQueueTest {
 
     private static final Logger logger = LoggerFactory.getLogger(LockFreeQueueTest.class);
 
-    public static final int THREADS = 129;
-    public static final int MESSAGES = 39;
-    public static final int SPACE = 100;
-
+    public static final int THREADS = 329;
+    public static final int MESSAGES = 9999;
+    public static final int SPACE = 10000;
     class Worker extends Thread {
         final LockFreeQueue<Integer> queue;
         final CountDownLatch startLock;
@@ -61,7 +59,7 @@ public class LockFreeQueueTest {
         public void run() {
             super.run();
             for (int j = 0; j < MESSAGES; ++j) {
-                queue.add(j + i * SPACE);
+                queue.add(j + i * SPACE); // + ( i == 1 && j == 0 ? 1 : 0));
 //                logger.info("put {}", (j + i * SPACE));
             }
         }
